@@ -1,121 +1,72 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import React, { useState } from 'react';
 
-function App() {
-  const [count, setCount] = useState(0)
+const TEMPLATE = "Bonjour [NAME], j'ai vu votre profil en tant que Déclarant en douane et je serais ravi d'échanger avec vous.";
+
+export default function App() {
+  const [jsonInput, setJsonInput] = useState('');
+  const [leads, setLeads] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const handleSync = async () => {
+    setLoading(true);
+    try {
+      const parsedLeads = JSON.parse(jsonInput);
+      const res = await fetch('/api/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leads: parsedLeads })
+      });
+      const data = await res.json();
+      // Show only the "Added" leads for the daily list
+      setLeads(data.results.filter(r => r.status === 'added'));
+      setJsonInput('');
+    } catch (e) {
+      alert("Invalid JSON or Server Error");
+    }
+    setLoading(false);
+  };
+
+  const handleAction = async (name, url) => {
+    const firstName = name.split(' ')[0];
+    const message = TEMPLATE.replace('[NAME]', firstName);
+    
+    // Copy template and open LinkedIn
+    await navigator.clipboard.writeText(message);
+    window.open(url, '_blank');
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
+    <div className="container">
+      <header>
+        <div className="eyebrow">Verdyct CRM</div>
+        <h1>Prospecting <span>Dashboard</span></h1>
+      </header>
+
+      <section className="input-zone">
+        <textarea 
+          placeholder="Paste Claude JSON here..." 
+          value={jsonInput}
+          onChange={(e) => setJsonInput(e.target.value)}
+        />
+        <button onClick={handleSync} disabled={loading}>
+          {loading ? 'Syncing with Notion...' : 'Sync Fresh Leads'}
         </button>
       </section>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
+      <section className="leads-grid">
+        <div className="column">
+          <h3>Today's Pipeline ({leads.length})</h3>
+          {leads.map((lead, i) => (
+            <div key={i} className="lead-card" onClick={() => handleAction(lead.name, lead.url)}>
+              <div className="info">
+                <strong>{lead.name}</strong>
+                <span>Click to Connect & Copy Msg</span>
+              </div>
+              <div className="arrow">→</div>
+            </div>
+          ))}
         </div>
       </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+    </div>
+  );
 }
-
-export default App
