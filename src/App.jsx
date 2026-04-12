@@ -26,10 +26,13 @@ export default function App() {
       console.log("5. API Response received. Status:", res.status);
       
       const data = await res.json();
-      console.log("6. Data parsed from JSON:", data);
+      console.error("FORCE LOGGING DATA:", data);
 
-      if (data.results) {
+      if (data.results && data.results.length > 0) {
+        alert("DEBUG FROM SERVER:\nStatus: " + data.results[0].status + "\n" + JSON.stringify(data.results[0], null, 2));
+        
         const added = data.results.filter(r => r.status === 'added');
+        setLeads(added);
         console.log("7. Leads to be added to UI:", added);
         setLeads(added);
         if (added.length === 0) alert("Sync complete: No new leads found (all duplicates).");
