@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const TEMPLATE = "Bonjour [NAME], en tant qu'expert en douanes, votre profil m'a interpellé. Je développe une IA pour automatiser la paperasse douanière (MACF/CBAM). Avant de tout coder, j'aimerais beaucoup avoir l'avis de ceux qui sont sur le terrain. Seriez-vous ouvert pour répondre à 3-4 questions rapides ici par écrit ? Promis, zéro vente.";
+const TEMPLATE = "Bonjour [NAME], je crée une IA pour automatiser la paperasse douanière (MACF). Avant de coder, j'aimerais l'avis d'un expert terrain. OK pour 3 questions ici ? Promis, zéro vente.";
 
 export default function App() {
   const [jsonInput, setJsonInput] = useState('');
@@ -58,7 +58,10 @@ export default function App() {
     const firstName = name.split(' ')[0];
     const message = TEMPLATE.replace('[NAME]', firstName);
     await navigator.clipboard.writeText(message);
-    window.open(url, '_blank');
+    
+    // Fix URLs lacking http:// so they don't break as local paths
+    const finalUrl = url.startsWith('http') ? url : `https://${url}`;
+    window.open(finalUrl, '_blank');
 
     // 2. Mark as Contacted Optimistically in UI
     setLeads(leads.filter(l => l.id !== id));
