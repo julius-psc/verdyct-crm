@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const TEMPLATE = "Bonjour [NAME], j'ai vu votre profil en tant que Déclarant en douane...";
+const TEMPLATE = "Bonjour [NAME], en tant qu'expert en douanes, votre profil m'a interpellé. Je développe une IA pour automatiser la paperasse douanière (MACF/CBAM). Avant de tout coder, j'aimerais beaucoup avoir l'avis de ceux qui sont sur le terrain. Seriez-vous ouvert pour répondre à 3-4 questions rapides ici par écrit ? Promis, zéro vente.";
 
 export default function App() {
   const [jsonInput, setJsonInput] = useState('');
