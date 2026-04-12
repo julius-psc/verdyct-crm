@@ -5,32 +5,41 @@ const TEMPLATE = "Bonjour [NAME], j'ai vu votre profil en tant que Déclarant en
 export default function App() {
   const [jsonInput, setJsonInput] = useState('');
   const [leads, setLeads] = useState([]);
-  const [stats, setStats] = useState({ added: 0, skipped: 0 });
   const [loading, setLoading] = useState(false);
 
   const handleSync = async () => {
+    console.log("1. Sync Button Clicked");
     setLoading(true);
-    setStats({ added: 0, skipped: 0 });
+    
     try {
+      console.log("2. Parsing JSON...");
       const parsedLeads = JSON.parse(jsonInput);
+      console.log("3. JSON Parsed successfully:", parsedLeads);
+
+      console.log("4. Sending to API...");
       const res = await fetch('/api/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ leads: parsedLeads })
       });
+
+      console.log("5. API Response received. Status:", res.status);
       
       const data = await res.json();
-      console.log("Server Response:", data);
+      console.log("6. Data parsed from JSON:", data);
 
-      const added = data.results.filter(r => r.status === 'added');
-      const skipped = data.results.filter(r => r.status === 'duplicate');
-      
-      setLeads(added);
-      setStats({ added: added.length, skipped: skipped.length });
-      setJsonInput('');
+      if (data.results) {
+        const added = data.results.filter(r => r.status === 'added');
+        console.log("7. Leads to be added to UI:", added);
+        setLeads(added);
+        if (added.length === 0) alert("Sync complete: No new leads found (all duplicates).");
+      } else {
+        console.error("API returned no results key:", data);
+      }
+
     } catch (e) {
-      alert("Error: Check console or JSON format");
-      console.error(e);
+      console.error("CRASH IN FRONTEND:", e);
+      alert("System Crash: " + e.message);
     }
     setLoading(false);
   };
@@ -43,43 +52,30 @@ export default function App() {
   };
 
   return (
-    <div className="container">
-      <header>
-        <div className="eyebrow">Verdyct CRM</div>
-        <h1>Prospecting <span>Dashboard</span></h1>
-      </header>
+    <div style={{ padding: '40px', maxWidth: '600px', margin: '0 auto', fontFamily: 'sans-serif' }}>
+      <h1>Verdyct Lead Sync</h1>
+      <textarea 
+        style={{ width: '100%', height: '150px', marginBottom: '10px' }}
+        placeholder="Paste JSON here..."
+        value={jsonInput}
+        onChange={(e) => setJsonInput(e.target.value)}
+      />
+      <button 
+        onClick={handleSync} 
+        disabled={loading}
+        style={{ width: '100%', padding: '15px', background: 'black', color: 'white', cursor: 'pointer' }}
+      >
+        {loading ? 'RUNNING SYNC...' : 'START SYNC'}
+      </button>
 
-      <section className="input-zone">
-        <textarea 
-          placeholder="Paste Claude JSON here..." 
-          value={jsonInput}
-          onChange={(e) => setJsonInput(e.target.value)}
-        />
-        <button onClick={handleSync} disabled={loading || !jsonInput}>
-          {loading ? 'Processing...' : 'Sync with Notion'}
-        </button>
-      </section>
-
-      {stats.added > 0 || stats.skipped > 0 ? (
-        <div className="stats-bar">
-          <span className="stat-ok">✅ {stats.added} Added</span>
-          <span className="stat-info">⏭️ {stats.skipped} Already in CRM</span>
-        </div>
-      ) : null}
-
-      <section className="leads-grid">
-        <h3>Today's New Batch</h3>
-        {leads.length === 0 && !loading && <p className="empty-msg">No new leads to show. Try a different batch!</p>}
-        {leads.map((lead, i) => (
-          <div key={i} className="lead-card" onClick={() => handleAction(lead.name, lead.url)}>
-            <div className="info">
-              <strong>{lead.name}</strong>
-              <span className="url-preview">{lead.url}</span>
-            </div>
-            <div className="arrow">Connect & Copy →</div>
+      <div style={{ marginTop: '30px' }}>
+        {leads.map((l, i) => (
+          <div key={i} onClick={() => handleAction(l.name, l.url)} style={{ padding: '15px', border: '1px solid #ccc', marginBottom: '10px', cursor: 'pointer', borderRadius: '8px' }}>
+            <strong>{l.name}</strong><br/>
+            <small>Click to open & copy message</small>
           </div>
         ))}
-      </section>
+      </div>
     </div>
   );
 }
