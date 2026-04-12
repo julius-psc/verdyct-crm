@@ -53,9 +53,33 @@ export default function App() {
     setLoading(false);
   };
 
+  const getFirstName = (rawName) => {
+    // 1. Strip trailing LinkedIn IDs (e.g. "-892267b5")
+    let clean = rawName.replace(/-[0-9a-zA-Z]+$/, '');
+    
+    // 2. If it came straight from a URL (no spaces, only dashes), convert dashes to spaces
+    if (!clean.includes(' ') && clean.includes('-')) {
+      clean = clean.replace(/-/g, ' ');
+    }
+
+    // 3. Grab the first word
+    let first = clean.split(' ')[0];
+
+    // 4. Remove any weird remaining characters just in case
+    first = first.replace(/[^a-zA-ZÀ-ÿ-]/g, '');
+
+    // 5. Capitalize nicely (e.g. mathis -> Mathis, jean-pierre -> Jean-Pierre)
+    if (first.length > 0) {
+      return first.split('-').map(part => 
+        part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+      ).join('-');
+    }
+    return '';
+  };
+
   const handleAction = async (id, name, url) => {
     // 1. Copy template and open LinkedIn
-    const firstName = name.split(' ')[0];
+    const firstName = getFirstName(name) || 'Expert';
     const message = TEMPLATE.replace('[NAME]', firstName);
     await navigator.clipboard.writeText(message);
     
