@@ -26,6 +26,10 @@ export default async function handler(req, res) {
 
       const existing = await query.json();
 
+      if (existing.object === 'error') {
+        throw new Error(`Notion API Error: ${existing.message}\n(Double-check your Token and Database ID)`);
+      }
+
       if (existing.results && existing.results.length === 0) {
         // 2. Add to Notion if new
         const create = await fetch('https://api.notion.com/v1/pages', {
