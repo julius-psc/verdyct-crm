@@ -49,9 +49,19 @@ export default async function handler(req, res) {
           })
         });
         const newPage = await create.json();
-        results.push({ name: lead.name, status: 'added', url: newPage.url });
+        
+        if (newPage.object === 'error') {
+          results.push({ name: lead.name, status: 'error', error: newPage.message });
+        } else {
+          results.push({ name: lead.name, status: 'added', url: newPage.url });
+        }
       } else {
-        results.push({ name: lead.name, status: 'duplicate' });
+        // Send back what Notion ACTUALLY matched so we can debug it
+        results.push({ 
+          name: lead.name, 
+          status: 'duplicate', 
+          matched_existing: existing.results ? existing.results[0] : 'No results array' 
+        });
       }
     }
 
