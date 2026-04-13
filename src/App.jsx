@@ -8,6 +8,8 @@ export default function App() {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const leadsPerPage = 10;
 
   const fetchLeads = async () => {
     setInitializing(true);
@@ -32,7 +34,16 @@ export default function App() {
     try {
       // Auto-fix JSON if multiple arrays were copy-pasted together
       const cleanedInput = jsonInput.trim().replace(/\]\s*\[/g, ',');
-      const parsedLeads = JSON.parse(cleanedInput);
+      let parsedLeads = JSON.parse(cleanedInput);
+      
+      // Clean up markdown links like [Name](URL)
+      parsedLeads = parsedLeads.map(lead => {
+        let cleanUrl = lead.url || '';
+        const match = cleanUrl.match(/\[.*?\]\((.*?)\)/);
+        if (match) cleanUrl = match[1];
+        return { ...lead, url: cleanUrl };
+      });
+
       const res = await fetch('/api/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -85,6 +96,19 @@ export default function App() {
     }
   };
 
+  const totalPages = Math.ceil(leads.length / leadsPerPage);
+  const indexOfLastLead = currentPage * leadsPerPage;
+  const indexOfFirstLead = indexOfLastLead - leadsPerPage;
+  const currentLeads = leads.slice(indexOfFirstLead, indexOfLastLead);
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [leads.length, currentPage, totalPages]);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
   if (initializing) {
     return (
       <div id="root">
@@ -124,16 +148,33 @@ export default function App() {
       {leads.length > 0 && <div className="divider" />}
 
       <div className="leads">
-        {leads.map((l) => (
+        {currentLeads.map((l) => (
           <div key={l.id} className="lead-card" onClick={() => handleAction(l.id, l.name, l.url)}>
             <div>
               <span className="lead-card-name">{l.name}</span>
-              <span className="lead-card-url">{l.url}</span>
             </div>
             <span className="lead-card-action">Connect →</span>
           </div>
         ))}
       </div>
+
+      {totalPages > 1 && (
+        <div className="pagination">
+          <button 
+            disabled={currentPage === 1} 
+            onClick={() => paginate(currentPage - 1)}
+          >
+            Prev
+          </button>
+          <span>{currentPage} / {totalPages}</span>
+          <button 
+            disabled={currentPage === totalPages} 
+            onClick={() => paginate(currentPage + 1)}
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }

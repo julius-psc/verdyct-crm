@@ -168,13 +168,30 @@ button:disabled {
   margin-bottom: 3px;
 }
 
-.lead-card-url {
-  font-size: 11px;
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.pagination button {
+  width: auto;
+  padding: 8px 16px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.pagination button:hover:not(:disabled) {
+  border-color: var(--pink);
+  background: #161616;
+}
+
+.pagination span {
+  font-size: 13px;
   color: var(--muted);
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .lead-card-action {
