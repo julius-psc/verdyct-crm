@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import verdyctLogo from './assets/images/verdyct-logo.png';
 
 const TEMPLATE = "Bonjour [NAME], je crée une IA pour automatiser la paperasse douanière (MACF). Avant de coder, j'aimerais l'avis d'un expert terrain. OK pour 3 questions ici ? Promis, zéro vente.";
 
@@ -8,7 +9,6 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
 
-  // Fetch 'To Contact' leads on load
   const fetchLeads = async () => {
     setInitializing(true);
     try {
@@ -36,15 +36,12 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ leads: parsedLeads })
       });
-      
       const data = await res.json();
       if (data.error) {
         alert("Notion Database Error:\n" + data.error);
         setLoading(false);
         return;
       }
-      
-      // Clear input and fetch the newly added leads
       setJsonInput('');
       await fetchLeads();
     } catch (e) {
@@ -54,23 +51,14 @@ export default function App() {
   };
 
   const getFirstName = (rawName) => {
-    // 1. Strip trailing LinkedIn IDs (e.g. "-892267b5")
     let clean = rawName.replace(/-[0-9a-zA-Z]+$/, '');
-    
-    // 2. If it came straight from a URL (no spaces, only dashes), convert dashes to spaces
     if (!clean.includes(' ') && clean.includes('-')) {
       clean = clean.replace(/-/g, ' ');
     }
-
-    // 3. Grab the first word
     let first = clean.split(' ')[0];
-
-    // 4. Remove any weird remaining characters just in case
     first = first.replace(/[^a-zA-ZÀ-ÿ-]/g, '');
-
-    // 5. Capitalize nicely (e.g. mathis -> Mathis, jean-pierre -> Jean-Pierre)
     if (first.length > 0) {
-      return first.split('-').map(part => 
+      return first.split('-').map(part =>
         part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
       ).join('-');
     }
@@ -78,19 +66,12 @@ export default function App() {
   };
 
   const handleAction = async (id, name, url) => {
-    // 1. Copy template and open LinkedIn
     const firstName = getFirstName(name) || 'Expert';
     const message = TEMPLATE.replace('[NAME]', firstName);
     await navigator.clipboard.writeText(message);
-    
-    // Fix URLs lacking http:// so they don't break as local paths
     const finalUrl = url.startsWith('http') ? url : `https://${url}`;
     window.open(finalUrl, '_blank');
-
-    // 2. Mark as Contacted Optimistically in UI
     setLeads(leads.filter(l => l.id !== id));
-
-    // 3. Update in Notion Backend
     try {
       await fetch('/api/updateLead', {
         method: 'POST',
@@ -103,48 +84,51 @@ export default function App() {
   };
 
   if (initializing) {
-    return <div style={{ padding: '40px', fontFamily: 'sans-serif' }}>Loading Shared CRM Data...</div>;
+    return (
+      <div id="root">
+        <div className="app">
+          <img src={verdyctLogo} alt="Verdyct" className="logo" />
+          <p className="loading">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div style={{ padding: '40px', maxWidth: '600px', margin: '0 auto', fontFamily: 'sans-serif' }}>
-      <h1>Verdyct Shared CRM</h1>
-      <p style={{ color: '#666', marginBottom: '30px' }}>
-        {leads.length > 0 
-          ? `There are ${leads.length} leads waiting to be contacted.` 
-          : "Inbox Zero! Time for a new batch of leads."}
-      </p>
+    <div className="app">
+      <div className="header">
+        <img src={verdyctLogo} alt="Verdyct" className="logo" />
+        <h1 className="title">Verdyct CRM</h1>
+        <p className="subtitle">
+          {leads.length > 0
+            ? `${leads.length} lead${leads.length > 1 ? 's' : ''} to contact`
+            : 'Inbox zero.'}
+        </p>
+      </div>
 
-      {/* Only show the Import Box when all leads are successfully contacted */}
       {leads.length === 0 && (
-        <div style={{ marginBottom: '40px' }}>
-          <textarea 
-            style={{ width: '100%', height: '150px', marginBottom: '10px', padding: '10px' }}
+        <div className="import-section">
+          <textarea
             placeholder="Paste JSON batch here..."
             value={jsonInput}
             onChange={(e) => setJsonInput(e.target.value)}
           />
-          <button 
-            onClick={handleSync} 
-            disabled={loading || !jsonInput}
-            style={{ width: '100%', padding: '15px', background: 'black', color: 'white', cursor: 'pointer', borderRadius: '8px', fontWeight: 'bold' }}
-          >
-            {loading ? 'RUNNING SYNC...' : 'IMPORT BATCH TO NOTION'}
+          <button onClick={handleSync} disabled={loading || !jsonInput}>
+            {loading ? 'Syncing...' : 'Import Batch'}
           </button>
         </div>
       )}
 
-      {/* Render the unified list of leads */}
-      <div>
+      {leads.length > 0 && <div className="divider" />}
+
+      <div className="leads">
         {leads.map((l) => (
-          <div key={l.id} onClick={() => handleAction(l.id, l.name, l.url)} style={{ padding: '15px', border: '1px solid #ccc', marginBottom: '10px', cursor: 'pointer', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div key={l.id} className="lead-card" onClick={() => handleAction(l.id, l.name, l.url)}>
             <div>
-              <strong style={{ fontSize: '18px' }}>{l.name}</strong><br/>
-              <small style={{ color: '#888' }}>{l.url}</small>
+              <span className="lead-card-name">{l.name}</span>
+              <span className="lead-card-url">{l.url}</span>
             </div>
-            <div style={{ background: '#eee', padding: '5px 10px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' }}>
-              Connect →
-            </div>
+            <span className="lead-card-action">Connect →</span>
           </div>
         ))}
       </div>
