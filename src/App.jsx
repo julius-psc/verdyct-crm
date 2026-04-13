@@ -30,7 +30,9 @@ export default function App() {
   const handleSync = async () => {
     setLoading(true);
     try {
-      const parsedLeads = JSON.parse(jsonInput);
+      // Auto-fix JSON if multiple arrays were copy-pasted together
+      const cleanedInput = jsonInput.trim().replace(/\]\s*\[/g, ',');
+      const parsedLeads = JSON.parse(cleanedInput);
       const res = await fetch('/api/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
