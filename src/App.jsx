@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import verdyctLogo from './assets/images/verdyct-logo.png';
+import { normalizeLead } from '../shared/leadUtils.js';
 
 const TEMPLATE = "Bonjour [NAME], je crée une IA pour automatiser la paperasse douanière (MACF). Avant de coder, j'aimerais l'avis d'un expert terrain. OK pour 3 questions ici ? Promis, zéro vente.";
 
@@ -34,15 +35,7 @@ export default function App() {
     try {
       // Auto-fix JSON if multiple arrays were copy-pasted together
       const cleanedInput = jsonInput.trim().replace(/\]\s*\[/g, ',');
-      let parsedLeads = JSON.parse(cleanedInput);
-      
-      // Clean up markdown links like [Name](URL)
-      parsedLeads = parsedLeads.map(lead => {
-        let cleanUrl = lead.url || '';
-        const match = cleanUrl.match(/\[.*?\]\((.*?)\)/);
-        if (match) cleanUrl = match[1];
-        return { ...lead, url: cleanUrl };
-      });
+      const parsedLeads = JSON.parse(cleanedInput).map(normalizeLead);
 
       const res = await fetch('/api/sync', {
         method: 'POST',
@@ -91,7 +84,7 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })
       });
-    } catch (e) {
+    } catch {
       console.error("Failed to update status in Notion");
     }
   };
