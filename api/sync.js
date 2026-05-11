@@ -1,4 +1,4 @@
-import { normalizeLead } from '../shared/leadUtils.js';
+import { isPageInTrash, normalizeLead } from '../shared/leadUtils.js';
 
 async function fetchExistingLeadUrls({ notionToken, databaseId }) {
   const urls = new Set();
@@ -25,6 +25,8 @@ async function fetchExistingLeadUrls({ notionToken, databaseId }) {
     }
 
     for (const page of payload.results || []) {
+      if (isPageInTrash(page)) continue;
+
       const rawUrl = page.properties?.['LinkedIn URL']?.url;
       const normalizedUrl = normalizeLead({ url: rawUrl }).url;
       if (normalizedUrl) urls.add(normalizedUrl);

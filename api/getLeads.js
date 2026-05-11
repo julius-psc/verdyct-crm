@@ -1,3 +1,5 @@
+import { isPageInTrash } from '../shared/leadUtils.js';
+
 export default async function handler(req, res) {
   const { NOTION_TOKEN, NOTION_DATABASE_ID } = process.env;
 
@@ -22,7 +24,9 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: existing.message });
     }
 
-    const leads = existing.results.map(page => {
+    const leads = existing.results
+    .filter(page => !isPageInTrash(page))
+    .map(page => {
       const nameProp = page.properties.Name;
       const urlProp = page.properties['LinkedIn URL'];
       

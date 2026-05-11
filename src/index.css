@@ -66,6 +66,10 @@ body {
   margin-bottom: 8px;
 }
 
+.admin-actions {
+  margin-bottom: 12px;
+}
+
 textarea {
   width: 100%;
   height: 120px;
@@ -122,6 +126,18 @@ button:disabled {
   opacity: 0.25;
   cursor: not-allowed;
   transform: none;
+}
+
+.button-secondary {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.button-secondary:hover:not(:disabled) {
+  border-color: var(--pink);
+  background: #161616;
+  opacity: 1;
 }
 
 /* Divider */

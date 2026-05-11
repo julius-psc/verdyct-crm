@@ -44,3 +44,32 @@ export function normalizeLead(lead = {}) {
     url: normalizeLeadUrl(lead.url)
   };
 }
+
+export function getLeadStatus(properties = {}) {
+  const status = properties['Lead Status'];
+  return status?.select?.name || status?.status?.name || '';
+}
+
+export function isPageInTrash(page = {}) {
+  return Boolean(page.in_trash || page.archived || page.is_archived);
+}
+
+export function compareLeadPages(a, b) {
+  const aStatus = getLeadStatus(a.properties);
+  const bStatus = getLeadStatus(b.properties);
+  const aHasProgress = aStatus && aStatus !== 'To Contact';
+  const bHasProgress = bStatus && bStatus !== 'To Contact';
+
+  if (aHasProgress !== bHasProgress) {
+    return aHasProgress ? -1 : 1;
+  }
+
+  const aCreated = Date.parse(a.created_time || 0);
+  const bCreated = Date.parse(b.created_time || 0);
+
+  if (aCreated !== bCreated) {
+    return aCreated - bCreated;
+  }
+
+  return a.id.localeCompare(b.id);
+}

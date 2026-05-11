@@ -8,6 +8,7 @@ export default function App() {
   const [jsonInput, setJsonInput] = useState('');
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [cleanupLoading, setCleanupLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const leadsPerPage = 10;
@@ -89,6 +90,43 @@ export default function App() {
     }
   };
 
+  const handleCleanupDuplicates = async () => {
+    const confirmed = window.confirm(
+      'This will move duplicate Notion entries to trash and keep one row per LinkedIn URL. Continue?'
+    );
+
+    if (!confirmed) return;
+
+    setCleanupLoading(true);
+
+    try {
+      const res = await fetch('/api/cleanupDuplicates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+
+      if (data.error) {
+        alert("Cleanup Error:\n" + data.error);
+        setCleanupLoading(false);
+        return;
+      }
+
+      const duplicateGroups = data.duplicate_groups_found || 0;
+      const removedCount = data.removed_count || 0;
+      alert(
+        duplicateGroups === 0
+          ? 'No duplicate LinkedIn URLs were found in Notion.'
+          : `Cleaned ${removedCount} duplicate entr${removedCount === 1 ? 'y' : 'ies'} across ${duplicateGroups} LinkedIn URL${duplicateGroups === 1 ? '' : 's'}.`
+      );
+      await fetchLeads();
+    } catch (e) {
+      alert("Cleanup Crash: " + e.message);
+    }
+
+    setCleanupLoading(false);
+  };
+
   const totalPages = Math.ceil(leads.length / leadsPerPage);
   const indexOfLastLead = currentPage * leadsPerPage;
   const indexOfFirstLead = indexOfLastLead - leadsPerPage;
@@ -123,6 +161,16 @@ export default function App() {
             ? `${leads.length} lead${leads.length > 1 ? 's' : ''} to contact`
             : 'Inbox zero.'}
         </p>
+      </div>
+
+      <div className="admin-actions">
+        <button
+          className="button-secondary"
+          onClick={handleCleanupDuplicates}
+          disabled={cleanupLoading || loading}
+        >
+          {cleanupLoading ? 'Cleaning Duplicates...' : 'Clean Existing Duplicates'}
+        </button>
       </div>
 
       {leads.length === 0 && (
